@@ -13,6 +13,12 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
+	<scm>
+		<connection>scm:git:git@github.com:I-TECH/distro-maven-plugin.git</connection>
+		<developerConnection>scm:git:git@github.com:I-TECH/distro-maven-plugin.git</developerConnection>
+		<url>scm:git:git@github.com:I-TECH/distro-maven-plugin.git</url>
+	</scm>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
