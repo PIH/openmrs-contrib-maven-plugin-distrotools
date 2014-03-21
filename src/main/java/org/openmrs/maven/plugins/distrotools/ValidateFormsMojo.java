@@ -12,7 +12,7 @@
  * Copyright (C) OpenMRS, LLC.  All Rights Reserved.
  */
 
-package org.openmrs.maven.plugins.distro;
+package org.openmrs.maven.plugins.distrotools;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.AbstractMojo;

@@ -1,5 +1,9 @@
-OpenMRS Distribution Maven Plugin
-=================================
+OpenMRS Distro Tools Maven Plugin
+=======================================
+
+Overview
+--------
+Useful build tasks for OpenMRS distributions.
 
 Goals
 -----
