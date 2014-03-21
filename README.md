@@ -50,3 +50,36 @@ Example:
       </executions>
     </plugin>
 
+### generate-metadata-sources
+Generates metadata reference source files from input XML files. For now this only works with concepts.
+
+ * _metadataDirectory_ the directory containing the XML files (for now this is just concepts.xml)
+      * Required: no
+      * Type: File
+      * Default: src/main/metadata
+ * _outputDirectory_ the output directory for generated source files (for now this just M.java)
+      * Required: no
+      * Type: File
+      * Default: target/generated-sources/metadata
+ * _outputPackage_ the output package for generated source files
+       * Required: yes
+       * Type: String
+
+Example:
+
+    <plugin>
+      <groupId>org.openmrs.maven.plugins</groupId>
+      <artifactId>distrotools-maven-plugin</artifactId>
+      <executions>
+        <execution>
+          <phase>generate-sources</phase>
+          <goals>
+            <goal>generate-metadata-sources</goal>
+          </goals>
+          <configuration>
+            <outputPackage>${project.parent.groupId}.${project.parent.artifactId}</outputPackage>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+

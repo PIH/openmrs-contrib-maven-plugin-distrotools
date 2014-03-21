@@ -43,9 +43,9 @@ public class DistroToolsUtils {
 	 * @param extension the extension
 	 * @return the files
 	 */
-	public static List<File> getFormFilesInDirectory(File directory, String extension) {
+	public static List<File> getFilesInDirectory(File directory, String extension) {
 		List<File> files = new ArrayList<File>();
-		getFormFilesInDirectoryRecursive(directory, extension, files);
+		getFilesInDirectoryRecursive(directory, extension, files);
 		return files;
 	}
 
@@ -55,13 +55,13 @@ public class DistroToolsUtils {
 	 * @param extension the extension
 	 * @param files the files found so far
 	 */
-	private static void getFormFilesInDirectoryRecursive(File directory, String extension, List<File> files) {
+	private static void getFilesInDirectoryRecursive(File directory, String extension, List<File> files) {
 		for (File child : directory.listFiles()) {
 			if (child.getName().endsWith(extension)) {
 				files.add(child);
 			}
 			else if (child.isDirectory()) {
-				getFormFilesInDirectoryRecursive(child, extension, files);
+				getFilesInDirectoryRecursive(child, extension, files);
 			}
 		}
 	}
@@ -91,13 +91,13 @@ public class DistroToolsUtils {
 	}
 
 	/**
-	 * Retrieves a child node by name
-	 * @param content the parent node
-	 * @param name the name of the child node
-	 * @return the child node with the specified name
+	 * Finds the first child of a node with the given name
+	 * @param parent the parent node
+	 * @param name the name
+	 * @return the child node
 	 */
-	public static Node findChildNode(Node content, String name) {
-		NodeList children = content.getChildNodes();
+	public static Node findChildNode(Node parent, String name) {
+		NodeList children = parent.getChildNodes();
 		for (int i = 0; i < children.getLength(); ++i) {
 			Node node = children.item(i);
 			if (name.equals(node.getNodeName())) {
@@ -105,5 +105,23 @@ public class DistroToolsUtils {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Finds all children of a node with the given name
+	 * @param parent the parent node
+	 * @param name the name
+	 * @return the child nodes
+	 */
+	public static List<Node> findChildNodes(Node parent, String name) {
+		List<Node> found = new ArrayList<Node>();
+		NodeList children = parent.getChildNodes();
+		for (int i = 0; i < children.getLength(); ++i) {
+			Node node = children.item(i);
+			if (name.equals(node.getNodeName())) {
+				found.add(node);
+			}
+		}
+		return found;
 	}
 }

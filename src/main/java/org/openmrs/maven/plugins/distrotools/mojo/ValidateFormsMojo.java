@@ -61,14 +61,11 @@ public class ValidateFormsMojo extends AbstractMojo {
 	 * @throws MojoExecutionException if an error occurs
 	 */
 	public void execute() throws MojoExecutionException, MojoFailureException {
-		if (!formsDirectory.exists()) {
-			throw new MojoFailureException("Forms directory '" + formsDirectory + "' doesn't exist");
-		}
-		if (!formsDirectory.isDirectory()) {
-			throw new MojoFailureException("Forms directory '" + formsDirectory + "' is not a directory");
+		if (!formsDirectory.exists() || !formsDirectory.isDirectory()) {
+			throw new MojoFailureException("Forms directory '" + formsDirectory + "' doesn't exist or is not a directory");
 		}
 
-		List<File> formfiles = DistroToolsUtils.getFormFilesInDirectory(formsDirectory, formsExtension);
+		List<File> formfiles = DistroToolsUtils.getFilesInDirectory(formsDirectory, formsExtension);
 
 		getLog().info("Found " + formfiles.size() + " form files");
 
