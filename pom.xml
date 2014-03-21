@@ -98,8 +98,8 @@
 	<distributionManagement>
 		<repository>
 			<id>openmrs-repo</id>
-			<name>OpenMRS Maven Repo</name>
-			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+			<name>OpenMRS Releases Repo</name>
+			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/releases</url>
 		</repository>
 		<snapshotRepository>
 			<id>openmrs-repo-snapshots</id>
