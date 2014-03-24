@@ -22,17 +22,15 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.openmrs.maven.plugins.distrotools.DistroToolsUtils;
+import org.openmrs.maven.plugins.distrotools.util.FileUtils;
+import org.openmrs.maven.plugins.distrotools.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
@@ -65,18 +63,14 @@ public class ValidateFormsMojo extends AbstractMojo {
 			throw new MojoFailureException("Forms directory " + formsDirectory + " doesn't exist or is not a directory");
 		}
 
-		List<File> formfiles = DistroToolsUtils.getFilesInDirectory(formsDirectory, formsExtension);
+		List<File> formfiles = FileUtils.getFilesInDirectory(formsDirectory, formsExtension);
 
 		getLog().info("Found " + formfiles.size() + " form files");
 
 		try {
 			// Instantiate some required DOM tools
-			DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-			Transformer documentTransformer = TransformerFactory.newInstance().newTransformer();
-			documentTransformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-			documentTransformer.setOutputProperty(OutputKeys.INDENT, "yes");
-			documentTransformer.setOutputProperty(OutputKeys.METHOD, "xml");
-			documentTransformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+			DocumentBuilder documentBuilder = XmlUtils.createBuilder();
+			Transformer documentTransformer = XmlUtils.createTransformer();
 
 			for (File formFile : formfiles) {
 				validateFormFile(formFile, documentBuilder, documentTransformer);
@@ -101,8 +95,8 @@ public class ValidateFormsMojo extends AbstractMojo {
 			String xml = IOUtils.toString(new FileReader(formFile));
 
 			// Validate basic structure
-			Document form = DistroToolsUtils.stringToDocument(xml, documentBuilder);
-			Node htmlformNode = DistroToolsUtils.findChildNode(form, "htmlform");
+			Document form = XmlUtils.stringToDocument(xml, documentBuilder);
+			Node htmlformNode = XmlUtils.findFirstChild(form, "htmlform");
 			if (htmlformNode == null) {
 				throw new MojoFailureException("Form file " + formFile.getPath() + " has no root <htmlform> node");
 			}
@@ -147,9 +141,9 @@ public class ValidateFormsMojo extends AbstractMojo {
 	 * @return the form XML with macros applied
 	 */
 	protected static String applyMacros(String xml, DocumentBuilder documentBuilder, Transformer documentTransformer) throws IOException, TransformerException, SAXException {
-		Document form = DistroToolsUtils.stringToDocument(xml, documentBuilder);
-		Node htmlformNode = DistroToolsUtils.findChildNode(form, "htmlform");
-		Node macrosNode = DistroToolsUtils.findChildNode(htmlformNode, "macros");
+		Document form = XmlUtils.stringToDocument(xml, documentBuilder);
+		Node htmlformNode = XmlUtils.findFirstChild(form, "htmlform");
+		Node macrosNode = XmlUtils.findFirstChild(htmlformNode, "macros");
 
 		// If there are no macros defined, we just return the original document
 		if (macrosNode == null) {
@@ -167,7 +161,7 @@ public class ValidateFormsMojo extends AbstractMojo {
 		htmlformNode.removeChild(macrosNode);
 
 		// Switch back to string so we can use string utilities to substitute
-		xml = DistroToolsUtils.documentToString(form, documentTransformer);
+		xml = XmlUtils.documentToString(form, documentTransformer);
 
 		// substitute any macros we found
 		for (Object temp : macros.keySet()) {

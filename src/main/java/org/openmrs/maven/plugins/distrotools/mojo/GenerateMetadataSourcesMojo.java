@@ -22,9 +22,9 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.distrotools.DistroMetadataConfig;
+import org.openmrs.maven.plugins.distrotools.util.XmlUtils;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -34,7 +34,7 @@ import java.util.Map;
 /**
  * Goal which generates two things from the distribution's metadata configuration
  *  1. A Java source file of constants (Metadata.java)
- *  2. A properties file for filtering of resources containing metadata references
+ *  2. A properties file for filtering of resources containing metadata references (metadata.properties)
  */
 @Mojo(name = "generate-metadata-sources", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class GenerateMetadataSourcesMojo extends AbstractMojo {
@@ -66,9 +66,9 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 
 		try {
 			// Instantiate some required DOM tools
-			DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			DocumentBuilder documentBuilder = XmlUtils.createBuilder();
 
-			// Load provided distro configuration
+			// Load provided distribution configuration
 			DistroMetadataConfig distroConfig = DistroMetadataConfig.loadFromDirectory(metadataDirectory, documentBuilder, getLog());
 
 			generateMetadataSource(distroConfig, outputDirectory, outputPackage);

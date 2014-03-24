@@ -12,7 +12,7 @@
  * Copyright (C) OpenMRS, LLC.  All Rights Reserved.
  */
 
-package org.openmrs.maven.plugins.distrotools;
+package org.openmrs.maven.plugins.distrotools.util;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -21,11 +21,15 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -33,37 +37,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Utility methods
+ * XML utility methods
  */
-public class DistroToolsUtils {
+public class XmlUtils {
 
 	/**
-	 * Gets all of the files in the given directory with the given extension
-	 * @param directory the directory
-	 * @param extension the extension
-	 * @return the files
+	 * Creates a new document builder
+	 * @return the builder
 	 */
-	public static List<File> getFilesInDirectory(File directory, String extension) {
-		List<File> files = new ArrayList<File>();
-		getFilesInDirectoryRecursive(directory, extension, files);
-		return files;
+	public static DocumentBuilder createBuilder() throws ParserConfigurationException {
+		return DocumentBuilderFactory.newInstance().newDocumentBuilder();
 	}
 
 	/**
-	 * Recursively fetches form files from the given directory and its sub-directories
-	 * @param directory the directory
-	 * @param extension the extension
-	 * @param files the files found so far
+	 * Creates a new document transformer
+	 * @return the transformer
 	 */
-	private static void getFilesInDirectoryRecursive(File directory, String extension, List<File> files) {
-		for (File child : directory.listFiles()) {
-			if (child.getName().endsWith(extension)) {
-				files.add(child);
-			}
-			else if (child.isDirectory()) {
-				getFilesInDirectoryRecursive(child, extension, files);
-			}
-		}
+	public static Transformer createTransformer() throws TransformerConfigurationException {
+		Transformer transformer = TransformerFactory.newInstance().newTransformer();
+		transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+		transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		return transformer;
 	}
 
 	/**
@@ -96,7 +92,7 @@ public class DistroToolsUtils {
 	 * @param name the name
 	 * @return the child node
 	 */
-	public static Node findChildNode(Node parent, String name) {
+	public static Node findFirstChild(Node parent, String name) {
 		NodeList children = parent.getChildNodes();
 		for (int i = 0; i < children.getLength(); ++i) {
 			Node node = children.item(i);
@@ -113,7 +109,7 @@ public class DistroToolsUtils {
 	 * @param name the name
 	 * @return the child nodes
 	 */
-	public static List<Node> findChildNodes(Node parent, String name) {
+	public static List<Node> findAllChildren(Node parent, String name) {
 		List<Node> found = new ArrayList<Node>();
 		NodeList children = parent.getChildNodes();
 		for (int i = 0; i < children.getLength(); ++i) {

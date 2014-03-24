@@ -15,6 +15,7 @@
 package org.openmrs.maven.plugins.distrotools;
 
 import org.apache.maven.plugin.logging.Log;
+import org.openmrs.maven.plugins.distrotools.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -62,9 +63,9 @@ public class DistroMetadataConfig {
 
 		if (xmlFile.exists()) {
 			Document document = documentBuilder.parse(xmlFile);
-			Node itemsNode = DistroToolsUtils.findChildNode(document, "items");
+			Node itemsNode = XmlUtils.findFirstChild(document, "items");
 
-			for (Node itemNode : DistroToolsUtils.findChildNodes(itemsNode, "item")) {
+			for (Node itemNode : XmlUtils.findAllChildren(itemsNode, "item")) {
 				Node keyNode = itemNode.getAttributes().getNamedItem("key");
 				Node uuidNode = itemNode.getAttributes().getNamedItem("uuid");
 				constants.put(keyNode.getTextContent(), uuidNode.getTextContent());
