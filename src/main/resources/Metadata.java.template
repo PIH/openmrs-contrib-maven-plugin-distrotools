@@ -17,7 +17,7 @@ package {PACKAGE};
 /**
  * Generated metadata configuration file. DO NOT edit directly.
  */
-public class M {
+public class Metadata {
 	public static class Concept {
 {CONCEPTS}
 	}

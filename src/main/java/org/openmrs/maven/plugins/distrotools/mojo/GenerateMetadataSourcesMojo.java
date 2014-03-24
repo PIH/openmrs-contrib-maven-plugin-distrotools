@@ -27,10 +27,14 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Map;
 
 /**
- * Goal which generates a metadata source file of constants from XML resources
+ * Goal which generates two things from the distribution's metadata configuration
+ *  1. A Java source file of constants (Metadata.java)
+ *  2. A properties file for filtering of resources containing metadata references
  */
 @Mojo(name = "generate-metadata-sources", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class GenerateMetadataSourcesMojo extends AbstractMojo {
@@ -45,6 +49,12 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 	@Parameter(property = "outputPackage", required = true)
 	private String outputPackage;
 
+	@Parameter(property = "outputFilterFile", required = true, defaultValue = "${project.build.directory}/metadata.properties")
+	private File outputFilterFile;
+
+	// Name of the generated source file
+	private static final String GEN_SOURCE_NAME = "Metadata.java";
+
 	/**
 	 * Executes the generate goal
 	 * @throws org.apache.maven.plugin.MojoExecutionException if an error occurs
@@ -58,29 +68,12 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 			// Instantiate some required DOM tools
 			DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 
-			// Load template for M.java
-			String template = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("M.java.template"));
-			template = template.replace("{PACKAGE}", outputPackage);
-
 			// Load provided distro configuration
 			DistroMetadataConfig distroConfig = DistroMetadataConfig.loadFromDirectory(metadataDirectory, documentBuilder, getLog());
 
-			template = template.replace("{CONCEPTS}", renderItemsAsConstants(distroConfig.getConcepts()));
-			template = template.replace("{FORMS}", renderItemsAsConstants(distroConfig.getForms()));
+			generateMetadataSource(distroConfig, outputDirectory, outputPackage);
 
-			String outputPath = outputDirectory.getPath() + File.separator + outputPackage.replace(".", File.separator) + File.separator + "M.java";
-			File outputFile = new File(outputPath);
-
-			// Make sub-folders if necessary
-			if (!outputFile.getParentFile().exists()) {
-				outputFile.getParentFile().mkdirs();
-			}
-
-			FileWriter writer = new FileWriter(outputFile);
-			IOUtils.write(template, writer);
-			writer.close();
-
-			getLog().info("Generated " + outputFile.getPath());
+			generateMetadataFilter(distroConfig, outputFilterFile);
 		}
 		catch (Exception ex) {
 			throw new MojoExecutionException("Unexpected error", ex);
@@ -88,14 +81,57 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 	}
 
 	/**
+	 * Generates the metadata source file
+	 * @param distroConfig the distribution configuration
+	 * @param directory the output directory
+	 * @param pkgName the output package name
+	 */
+	protected void generateMetadataSource(DistroMetadataConfig distroConfig, File directory, String pkgName) throws IOException {
+		// Load template for M.java
+		String template = IOUtils.toString(getClass().getClassLoader().getResourceAsStream(GEN_SOURCE_NAME + ".template"));
+		template = template.replace("{PACKAGE}", pkgName);
+
+		template = template.replace("{CONCEPTS}", renderItemsAsConstants(distroConfig.getConcepts()));
+		template = template.replace("{FORMS}", renderItemsAsConstants(distroConfig.getForms()));
+
+		String outputPath = directory.getPath() + File.separator + pkgName.replace(".", File.separator) + File.separator + GEN_SOURCE_NAME;
+		File outputFile = new File(outputPath);
+
+		// Make sub-folders if necessary
+		if (!outputFile.getParentFile().exists()) {
+			outputFile.getParentFile().mkdirs();
+		}
+
+		FileWriter writer = new FileWriter(outputFile);
+		IOUtils.write(template, writer);
+		writer.close();
+
+		getLog().info("Generated " + outputFile.getPath());
+	}
+
+	/**
+	 * Generates the metadata filter file
+	 * @param distroConfig the distribution configuration
+	 * @param file the output filter file
+	 */
+	protected void generateMetadataFilter(DistroMetadataConfig distroConfig, File file) throws IOException {
+		FileWriter writer = new FileWriter(file);
+		writeAsProperties(distroConfig.getConcepts(), "metadata.concept.", writer);
+		writeAsProperties(distroConfig.getForms(), "metadata.form.", writer);
+		writer.close();
+
+		getLog().info("Generated " + file.getPath());
+	}
+
+	/**
 	 * Renders metadata items as code constants
-	 * @param constants the constants
+	 * @param items the items
 	 * @return the code
 	 */
-	protected String renderItemsAsConstants(Map<String, String> constants) {
+	protected String renderItemsAsConstants(Map<String, String> items) {
 		StringBuilder sb = new StringBuilder();
 
-		for (Map.Entry<String, String> entry : constants.entrySet()) {
+		for (Map.Entry<String, String> entry : items.entrySet()) {
 			sb.append("\t\tpublic static final String ");
 			sb.append(entry.getKey());
 			sb.append(" = \"");
@@ -104,5 +140,17 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 		}
 
 		return sb.toString();
+	}
+
+	/**
+	 * Writes metadata items as properties
+	 * @param items the items
+	 * @param prefix the property prefix
+	 * @param writer the writer
+	 */
+	protected void writeAsProperties(Map<String, String> items, String prefix, Writer writer) throws IOException {
+		for (Map.Entry<String, String> entry : items.entrySet()) {
+			writer.write(prefix + entry.getKey() + "=" + entry.getValue() + "\n");
+		}
 	}
 }
