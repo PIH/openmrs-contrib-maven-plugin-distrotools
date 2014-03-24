@@ -62,7 +62,7 @@ public class ValidateFormsMojo extends AbstractMojo {
 	 */
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (!formsDirectory.exists() || !formsDirectory.isDirectory()) {
-			throw new MojoFailureException("Forms directory '" + formsDirectory + "' doesn't exist or is not a directory");
+			throw new MojoFailureException("Forms directory " + formsDirectory + " doesn't exist or is not a directory");
 		}
 
 		List<File> formfiles = DistroToolsUtils.getFilesInDirectory(formsDirectory, formsExtension);
@@ -104,7 +104,7 @@ public class ValidateFormsMojo extends AbstractMojo {
 			Document form = DistroToolsUtils.stringToDocument(xml, documentBuilder);
 			Node htmlformNode = DistroToolsUtils.findChildNode(form, "htmlform");
 			if (htmlformNode == null) {
-				throw new MojoFailureException("Form file '" + formFile.getPath() + "' has no root <htmlform> node");
+				throw new MojoFailureException("Form file " + formFile.getPath() + " has no root <htmlform> node");
 			}
 
 			xml = stripComments(xml);
@@ -113,17 +113,17 @@ public class ValidateFormsMojo extends AbstractMojo {
 				xml = applyMacros(xml, documentBuilder, documentTransformer);
 			}
 			catch (Exception ex) {
-				throw new MojoFailureException("Unable to apply macros in '" + formFile.getPath() + "'", ex);
+				throw new MojoFailureException("Unable to apply macros in " + formFile.getPath(), ex);
 			}
 		}
 		catch (IOException ex) {
-			throw new MojoFailureException("Unable to load '" + formFile.getPath() + "'", ex);
+			throw new MojoFailureException("Unable to load " + formFile.getPath(), ex);
 		}
 		catch (SAXException ex) {
-			throw new MojoFailureException("Unable to parse '" + formFile.getPath() + "'", ex);
+			throw new MojoFailureException("Unable to parse " + formFile.getPath(), ex);
 		}
 
-		getLog().info("Validated form file '" + formFile.getPath() + "'");
+		getLog().info("Validated form file " + formFile.getPath());
 	}
 
 	/**

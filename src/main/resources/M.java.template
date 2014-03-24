@@ -15,10 +15,13 @@
 package {PACKAGE};
 
 /**
- * Generated metadata file. Do not edit directly.
+ * Generated metadata configuration file. DO NOT edit directly.
  */
 public class M {
 	public static class Concept {
 {CONCEPTS}
+	}
+	public static class Form {
+{FORMS}
 	}
 }

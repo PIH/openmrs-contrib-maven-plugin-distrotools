@@ -21,17 +21,12 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.openmrs.maven.plugins.distrotools.DistroToolsUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
+import org.openmrs.maven.plugins.distrotools.DistroMetadataConfig;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -40,11 +35,11 @@ import java.util.Map;
 @Mojo(name = "generate-metadata-sources", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class GenerateMetadataSourcesMojo extends AbstractMojo {
 
-	// Directory of form files
-	@Parameter(property = "metadataDirectory", required = true, defaultValue = "src/main/metadata")
+	// Metadata configuration directory
+	@Parameter(property = "metadataDirectory", required = true, defaultValue = "src/main/distro/metadata")
 	private File metadataDirectory;
 
-	@Parameter(property = "outputDirectory", required = true, defaultValue = "${project.build.directory}/generated-sources/metadata")
+	@Parameter(property = "outputDirectory", required = true, defaultValue = "${project.build.directory}/generated-sources/distro")
 	private File outputDirectory;
 
 	@Parameter(property = "outputPackage", required = true)
@@ -56,7 +51,7 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 	 */
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (!metadataDirectory.exists() || !metadataDirectory.isDirectory()) {
-			throw new MojoFailureException("Metadata directory '" + metadataDirectory + "' doesn't exist or is not a directory");
+			throw new MojoFailureException("Metadata configuration directory " + metadataDirectory + " doesn't exist or is not a directory");
 		}
 
 		try {
@@ -65,16 +60,13 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 
 			// Load template for M.java
 			String template = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("M.java.template"));
-
 			template = template.replace("{PACKAGE}", outputPackage);
 
-			File conceptsFile = new File(metadataDirectory.getPath() + File.separator + "concepts.xml");
+			// Load provided distro configuration
+			DistroMetadataConfig distroConfig = DistroMetadataConfig.loadFromDirectory(metadataDirectory, documentBuilder, getLog());
 
-			if (conceptsFile.exists()) {
-				Map<String, String> constants = loadMetadataItems(conceptsFile, documentBuilder);
-				template = template.replace("{CONCEPTS}", renderItemsAsConstants(constants));
-				getLog().info("Processed '" + conceptsFile.getPath() + "'");
-			}
+			template = template.replace("{CONCEPTS}", renderItemsAsConstants(distroConfig.getConcepts()));
+			template = template.replace("{FORMS}", renderItemsAsConstants(distroConfig.getForms()));
 
 			String outputPath = outputDirectory.getPath() + File.separator + outputPackage.replace(".", File.separator) + File.separator + "M.java";
 			File outputFile = new File(outputPath);
@@ -88,31 +80,11 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 			IOUtils.write(template, writer);
 			writer.close();
 
-			getLog().info("Generated '" + outputFile.getPath() + "'");
+			getLog().info("Generated " + outputFile.getPath());
 		}
 		catch (Exception ex) {
 			throw new MojoExecutionException("Unexpected error", ex);
 		}
-	}
-
-	/**
-	 * Loads metadata items from the given file
-	 * @param xmlFile the XML file
-	 * @param documentBuilder the DOM document builder
-	 * @return the metadata items
-	 */
-	protected Map<String, String> loadMetadataItems(File xmlFile, DocumentBuilder documentBuilder) throws IOException, SAXException {
-		Map<String, String> constants = new LinkedHashMap<String, String>();
-		Document document = documentBuilder.parse(xmlFile);
-		Node itemsNode = DistroToolsUtils.findChildNode(document, "items");
-
-		for (Node itemNode : DistroToolsUtils.findChildNodes(itemsNode, "item")) {
-			Node keyNode = itemNode.getAttributes().getNamedItem("key");
-			Node uuidNode = itemNode.getAttributes().getNamedItem("uuid");
-			constants.put(keyNode.getTextContent(), uuidNode.getTextContent());
-		}
-
-		return constants;
 	}
 
 	/**
