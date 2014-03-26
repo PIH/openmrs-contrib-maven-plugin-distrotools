@@ -17,7 +17,6 @@ package org.openmrs.maven.plugins.distrotools.util;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.maven.plugins.distrotools.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -49,11 +48,11 @@ public class XmlUtilsTest {
 	 */
 	@Test
 	public void stringToDocument_shouldParseStringIntoDocument() throws Exception {
-		String xml = "<items><item key=\"YES\" /><item /></items>";
+		String xml = "<refs><ref key=\"YES\" /><ref /></refs>";
 		Document doc = XmlUtils.stringToDocument(xml, documentBuilder);
 
-		Assert.assertThat(doc.getFirstChild().getNodeName(), is("items"));
-		Assert.assertThat(doc.getFirstChild().getFirstChild().getNodeName(), is("item"));
+		Assert.assertThat(doc.getFirstChild().getNodeName(), is("refs"));
+		Assert.assertThat(doc.getFirstChild().getFirstChild().getNodeName(), is("ref"));
 	}
 
 	/**
@@ -61,7 +60,7 @@ public class XmlUtilsTest {
 	 */
 	@Test
 	public void findChildNode_shouldReturnFirstNodeWithName() throws Exception {
-		Assert.assertThat(XmlUtils.findFirstChild(testDocument, "items").getNodeName(), is("items"));
+		Assert.assertThat(XmlUtils.findFirstChild(testDocument, "refs").getNodeName(), is("refs"));
 		Assert.assertThat(XmlUtils.findFirstChild(testDocument, "xxx"), nullValue());
 	}
 
@@ -70,8 +69,8 @@ public class XmlUtilsTest {
 	 */
 	@Test
 	public void findChildNodes_shouldReturnAllNodesWithName() throws Exception {
-		Node itemsNode = XmlUtils.findFirstChild(testDocument, "items");
-		Assert.assertThat(XmlUtils.findAllChildren(itemsNode, "item").size(), is(2));
+		Node itemsNode = XmlUtils.findFirstChild(testDocument, "refs");
+		Assert.assertThat(XmlUtils.findAllChildren(itemsNode, "ref").size(), is(2));
 		Assert.assertThat(XmlUtils.findAllChildren(itemsNode, "xxx").size(), is(0));
 	}
 }

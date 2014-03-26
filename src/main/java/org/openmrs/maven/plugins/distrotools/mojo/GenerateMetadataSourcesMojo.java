@@ -21,14 +21,13 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.openmrs.maven.plugins.distrotools.DistroMetadataConfig;
+import org.openmrs.maven.plugins.distrotools.MetadataConfig;
 import org.openmrs.maven.plugins.distrotools.util.XmlUtils;
 
 import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.Map;
 
 /**
@@ -69,7 +68,7 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 			DocumentBuilder documentBuilder = XmlUtils.createBuilder();
 
 			// Load provided distribution configuration
-			DistroMetadataConfig distroConfig = DistroMetadataConfig.loadFromDirectory(metadataDirectory, documentBuilder, getLog());
+			MetadataConfig distroConfig = MetadataConfig.loadFromDirectory(metadataDirectory, documentBuilder, getLog());
 
 			generateMetadataSource(distroConfig, outputDirectory, outputPackage);
 
@@ -82,17 +81,18 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 
 	/**
 	 * Generates the metadata source file
-	 * @param distroConfig the distribution configuration
+	 * @param config the metadata configuration
 	 * @param directory the output directory
 	 * @param pkgName the output package name
 	 */
-	protected void generateMetadataSource(DistroMetadataConfig distroConfig, File directory, String pkgName) throws IOException {
+	protected void generateMetadataSource(MetadataConfig config, File directory, String pkgName) throws IOException {
 		// Load template for M.java
 		String template = IOUtils.toString(getClass().getClassLoader().getResourceAsStream(GEN_SOURCE_NAME + ".template"));
 		template = template.replace("{PACKAGE}", pkgName);
 
-		template = template.replace("{CONCEPTS}", renderItemsAsConstants(distroConfig.getConcepts()));
-		template = template.replace("{FORMS}", renderItemsAsConstants(distroConfig.getForms()));
+		StringBuilder sb = new StringBuilder();
+		renderReferencesAsClasses(sb, config);
+		template = template.replace("{REFERENCES}", sb.toString());
 
 		String outputPath = directory.getPath() + File.separator + pkgName.replace(".", File.separator) + File.separator + GEN_SOURCE_NAME;
 		File outputFile = new File(outputPath);
@@ -111,46 +111,62 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 
 	/**
 	 * Generates the metadata filter file
-	 * @param distroConfig the distribution configuration
+	 * @param config the metadata configuration
 	 * @param file the output filter file
 	 */
-	protected void generateMetadataFilter(DistroMetadataConfig distroConfig, File file) throws IOException {
+	protected void generateMetadataFilter(MetadataConfig config, File file) throws IOException {
 		FileWriter writer = new FileWriter(file);
-		writeAsProperties(distroConfig.getConcepts(), "metadata.concept.", writer);
-		writeAsProperties(distroConfig.getForms(), "metadata.form.", writer);
+
+		for (Map.Entry<String, String> property : config.toProperties().entrySet()) {
+			writer.write(property.getKey() + "=" + property.getValue() + "\n");
+		}
+
 		writer.close();
 
 		getLog().info("Generated " + file.getPath());
 	}
 
 	/**
-	 * Renders metadata items as code constants
-	 * @param items the items
+	 * Renders metadata references as constant classes organized by type
+	 * @param sb the string builder
+	 * @param config the metadata configuration
 	 * @return the code
 	 */
-	protected String renderItemsAsConstants(Map<String, String> items) {
-		StringBuilder sb = new StringBuilder();
-
-		for (Map.Entry<String, String> entry : items.entrySet()) {
-			sb.append("\t\tpublic static final String ");
-			sb.append(entry.getKey());
-			sb.append(" = \"");
-			sb.append(entry.getValue());
-			sb.append("\";\n");
+	protected void renderReferencesAsClasses(StringBuilder sb, MetadataConfig config) {
+		for (String type : config.getSupportedTypes()) {
+			renderTypeReferencesAsClass(sb, type, config.getReferencesByType(type));
 		}
-
-		return sb.toString();
 	}
 
 	/**
-	 * Writes metadata items as properties
-	 * @param items the items
-	 * @param prefix the property prefix
-	 * @param writer the writer
+	 * Renders all references for the given type as class of constants
+	 * @param sb the string builder
+	 * @param type the type name
+	 * @param references the type reference map
 	 */
-	protected void writeAsProperties(Map<String, String> items, String prefix, Writer writer) throws IOException {
-		for (Map.Entry<String, String> entry : items.entrySet()) {
-			writer.write(prefix + entry.getKey() + "=" + entry.getValue() + "\n");
+	protected void renderTypeReferencesAsClass(StringBuilder sb, String type, Map<String, String> references) {
+		sb.append("\n\tpublic static class ");
+		sb.append(type);
+		sb.append(" {\n");
+
+		for (Map.Entry<String, String> entry : references.entrySet()) {
+			renderReferenceAsConstant(sb, entry.getKey(), entry.getValue());
 		}
+
+		sb.append("\t}\n");
+	}
+
+	/**
+	 * Renders a single reference as a constant
+	 * @param sb the string builder
+	 * @param key the reference key
+	 * @param uuid the reference UUID
+	 */
+	protected void renderReferenceAsConstant(StringBuilder sb, String key, String uuid) {
+		sb.append("\t\tpublic static final String ");
+		sb.append(key);
+		sb.append(" = \"");
+		sb.append(uuid);
+		sb.append("\";\n");
 	}
 }

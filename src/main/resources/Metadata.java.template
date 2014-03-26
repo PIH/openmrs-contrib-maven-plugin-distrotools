@@ -18,10 +18,5 @@ package {PACKAGE};
  * Generated metadata configuration file. DO NOT edit directly.
  */
 public class Metadata {
-	public static class Concept {
-{CONCEPTS}
-	}
-	public static class Form {
-{FORMS}
-	}
+{REFERENCES}
 }
