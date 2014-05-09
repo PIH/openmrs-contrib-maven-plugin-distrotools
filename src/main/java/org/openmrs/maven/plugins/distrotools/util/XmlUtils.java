@@ -120,4 +120,15 @@ public class XmlUtils {
 		}
 		return found;
 	}
+
+	/**
+	 * Finds the attribute value with the given name
+	 * @param node the node
+	 * @param name the attribute name
+	 * @return the attribute value
+	 */
+	public static String findAttribute(Node node, String name) {
+		Node attr = node.getAttributes().getNamedItem(name);
+		return attr.getTextContent();
+	}
 }

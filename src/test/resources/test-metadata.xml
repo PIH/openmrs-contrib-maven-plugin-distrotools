@@ -1,5 +1,5 @@
 <!-- Testing metadata file -->
-<refs>
+<refs type="Concept">
 	<ref key="YES" uuid="1065AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" />
 	<ref key="NO" uuid="1066AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" />
 </refs>

@@ -117,7 +117,7 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 	protected void generateMetadataFilter(MetadataConfig config, File file) throws IOException {
 		FileWriter writer = new FileWriter(file);
 
-		for (Map.Entry<String, String> property : config.toProperties().entrySet()) {
+		for (Map.Entry<Object, Object> property : config.toProperties("metadata.").entrySet()) {
 			writer.write(property.getKey() + "=" + property.getValue() + "\n");
 		}
 
@@ -133,7 +133,7 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 	 * @return the code
 	 */
 	protected void renderReferencesAsClasses(StringBuilder sb, MetadataConfig config) {
-		for (String type : config.getSupportedTypes()) {
+		for (String type : config.getConfiguredTypes()) {
 			renderTypeReferencesAsClass(sb, type, config.getReferencesByType(type));
 		}
 	}
