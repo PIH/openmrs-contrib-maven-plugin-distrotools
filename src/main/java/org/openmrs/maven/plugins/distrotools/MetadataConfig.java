@@ -14,23 +14,10 @@
 
 package org.openmrs.maven.plugins.distrotools;
 
-import org.apache.maven.plugin.logging.Log;
-import org.openmrs.maven.plugins.distrotools.util.FileUtils;
-import org.openmrs.maven.plugins.distrotools.util.XmlUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilder;
-import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -44,46 +31,6 @@ public class MetadataConfig {
 	 * Creates an empty metadata config
 	 */
 	public MetadataConfig() {
-	}
-
-	/**
-	 * Loads a metadata configuration from the given directory
-	 * @param directory the directory
-	 * @param documentBuilder the DOM document builder
-	 * @param log the log
-	 * @return the configuration
-	 */
-	public static MetadataConfig loadFromDirectory(File directory, DocumentBuilder documentBuilder, Log log) throws IOException, SAXException {
-		MetadataConfig config = new MetadataConfig();
-
-		List<File> configFiles = FileUtils.getFilesInDirectory(directory, "xml");
-
-		for (File configFile : configFiles) {
-			int loaded = config.loadReferences(configFile, documentBuilder);
-			log.info("Parsed " + loaded + " references from " + configFile.getAbsolutePath());
-		}
-
-		return config;
-	}
-
-	/**
-	 * Loads metadata references from the given file
-	 * @param configFile the XML config file
-	 * @param documentBuilder the DOM document builder
-	 * @return the number of references loaded
-	 */
-	protected int loadReferences(File configFile, DocumentBuilder documentBuilder) throws IOException, SAXException {
-		Document document = documentBuilder.parse(configFile);
-		Node refsNode = XmlUtils.findFirstChild(document, "refs");
-		String type = XmlUtils.findAttribute(refsNode, "type");
-		List<Node> refNodes = XmlUtils.findAllChildren(refsNode, "ref");
-
-		for (Node itemNode : refNodes) {
-			Node keyNode = itemNode.getAttributes().getNamedItem("key");
-			Node uuidNode = itemNode.getAttributes().getNamedItem("uuid");
-			addReference(type, keyNode.getTextContent(), uuidNode.getTextContent());
-		}
-		return refNodes.size();
 	}
 
 	/**

@@ -18,16 +18,22 @@ import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.openmrs.maven.plugins.distrotools.MetadataConfig;
+import org.openmrs.maven.plugins.distrotools.util.FileUtils;
 import org.openmrs.maven.plugins.distrotools.util.XmlUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -65,18 +71,56 @@ public class GenerateMetadataSourcesMojo extends AbstractMojo {
 
 		try {
 			// Instantiate some required DOM tools
-			DocumentBuilder documentBuilder = XmlUtils.createBuilder();
+			DocumentBuilder documentBuilder = XmlUtils.createBuilder("metadata-refs.xsd");
 
 			// Load provided distribution configuration
-			MetadataConfig distroConfig = MetadataConfig.loadFromDirectory(metadataDirectory, documentBuilder, getLog());
+			MetadataConfig distroConfig = loadFromDirectory(metadataDirectory, documentBuilder, getLog());
 
 			generateMetadataSource(distroConfig, outputDirectory, outputPackage);
 
 			generateMetadataFilter(distroConfig, outputFilterFile);
 		}
+		catch (MojoFailureException ex) {
+			throw ex;
+		}
 		catch (Exception ex) {
 			throw new MojoExecutionException("Unexpected error", ex);
 		}
+	}
+
+	/**
+	 * Loads a metadata configuration from the given directory
+	 * @param directory the directory
+	 * @param documentBuilder the DOM document builder
+	 * @param log the log
+	 * @return the configuration
+	 */
+	public static MetadataConfig loadFromDirectory(File directory, DocumentBuilder documentBuilder, Log log) throws MojoFailureException {
+		MetadataConfig config = new MetadataConfig();
+
+		List<File> configFiles = FileUtils.getFilesInDirectory(directory, "xml");
+
+		for (File configFile : configFiles) {
+			try {
+				Document document = documentBuilder.parse(configFile);
+				Node refsNode = XmlUtils.findFirstChild(document, "refs");
+				String type = XmlUtils.findAttribute(refsNode, "type");
+				List<Node> refNodes = XmlUtils.findAllChildren(refsNode, "ref");
+
+				for (Node itemNode : refNodes) {
+					Node keyNode = itemNode.getAttributes().getNamedItem("key");
+					Node uuidNode = itemNode.getAttributes().getNamedItem("uuid");
+					config.addReference(type, keyNode.getTextContent(), uuidNode.getTextContent());
+				}
+
+				log.info("Parsed " + refNodes.size() + " references from " + configFile.getAbsolutePath());
+			}
+			catch (Exception ex) {
+				throw new MojoFailureException("Unable to load " + configFile.getPath(), ex);
+			}
+		}
+
+		return config;
 	}
 
 	/**

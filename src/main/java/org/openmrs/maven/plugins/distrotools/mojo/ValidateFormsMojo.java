@@ -69,7 +69,7 @@ public class ValidateFormsMojo extends AbstractMojo {
 
 		try {
 			// Instantiate some required DOM tools
-			DocumentBuilder documentBuilder = XmlUtils.createBuilder();
+			DocumentBuilder documentBuilder = XmlUtils.createBuilder("htmlform.xsd");
 			Transformer documentTransformer = XmlUtils.createTransformer();
 
 			for (File formFile : formfiles) {
@@ -96,11 +96,6 @@ public class ValidateFormsMojo extends AbstractMojo {
 
 			// Validate basic structure
 			Document form = XmlUtils.stringToDocument(xml, documentBuilder);
-			Node htmlformNode = XmlUtils.findFirstChild(form, "htmlform");
-			if (htmlformNode == null) {
-				throw new MojoFailureException("Form file " + formFile.getPath() + " has no root <htmlform> node");
-			}
-
 			xml = stripComments(xml);
 
 			try {

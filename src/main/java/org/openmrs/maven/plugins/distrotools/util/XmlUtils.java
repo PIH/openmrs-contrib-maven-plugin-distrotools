@@ -14,11 +14,14 @@
 
 package org.openmrs.maven.plugins.distrotools.util;
 
+import org.apache.maven.plugin.logging.Log;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -30,7 +33,11 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -43,10 +50,24 @@ public class XmlUtils {
 
 	/**
 	 * Creates a new document builder
+	 * @param schemaResource the schema resource (may be null)
 	 * @return the builder
 	 */
-	public static DocumentBuilder createBuilder() throws ParserConfigurationException {
-		return DocumentBuilderFactory.newInstance().newDocumentBuilder();
+	public static DocumentBuilder createBuilder(String schemaResource) throws ParserConfigurationException, SAXException {
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+
+		if (schemaResource != null) {
+			SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+			InputStream in = XmlUtils.class.getClassLoader().getResourceAsStream(schemaResource);
+			Schema schema = schemaFactory.newSchema(new StreamSource(in));
+			factory.setSchema(schema);
+			factory.setValidating(false);
+			factory.setNamespaceAware(true);
+		}
+
+		DocumentBuilder builder = factory.newDocumentBuilder();
+		builder.setErrorHandler(new SimpleErrorHandler());
+		return builder;
 	}
 
 	/**
@@ -130,5 +151,22 @@ public class XmlUtils {
 	public static String findAttribute(Node node, String name) {
 		Node attr = node.getAttributes().getNamedItem(name);
 		return attr.getTextContent();
+	}
+
+	/**
+	 * Simple error handler implementation ignores warnings and re-throws error exceptions
+	 */
+	protected static class SimpleErrorHandler implements ErrorHandler {
+
+		public void warning(SAXParseException e) throws SAXException {
+		}
+
+		public void error(SAXParseException e) throws SAXException {
+			throw e;
+		}
+
+		public void fatalError(SAXParseException e) throws SAXException {
+			throw e;
+		}
 	}
 }
